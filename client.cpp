@@ -18,23 +18,27 @@ int main(int argc, char const *argv[]) {
     
     //Hint structure
     string ipAddress = argv[1]; //"130.208.243.61";
-    int portNo = atoi(argv[2]); //4021;
+    int portNoLow = atoi(argv[2]); //from 4000
+    int portNoHigh = atoi(argv[3]); //to 4100
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    for(int i = portNoLow; i <= portNoHigh; i++) {
+        sockaddr_in hint;
+        hint.sin_family = AF_INET;
+        hint.sin_port = htons(i);
 
-    sockaddr_in hint;
-    hint.sin_family = AF_INET;
-    hint.sin_port = htons(portNo);
+        //converting ipaddress to series of bytes and put into buffer, creating hint structure
+        inet_pton(AF_INET, ipAddress.c_str(), &hint.sin_addr);
 
-    //converting ipaddress to series of bytes and put into buffer, creating hint structure
-    inet_pton(AF_INET, ipAddress.c_str(), &hint.sin_addr);
-
-    //int conn = connect(sock, (sockaddr*)&hint, sizeof(hint));
-    if(connect(sock, (struct sockaddr *)&hint, sizeof(hint)) < 0) {
-        perror("Failed to open socket");
-        return(-1);
+        //int conn = connect(sock, (sockaddr*)&hint, sizeof(hint));
+        /*if(connect(sock, (struct sockaddr *)&hint, sizeof(hint)) < 0) {
+            perror("Failed to open socket");
+            return(-1);
+        */
+        }
     }
-
+    
+    /*
     char buffer[1025];
     string inp;
     cout << "Enter q to quit message loop!" << endl;
@@ -53,6 +57,7 @@ int main(int argc, char const *argv[]) {
     }while(true);
 
     close(sock);
+    */
 
     return 0;
 }
