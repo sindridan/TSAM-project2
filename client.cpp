@@ -21,6 +21,7 @@ int main(int argc, char const *argv[]) {
     int portNoHigh = atoi(argv[3]); //to 4100
     int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
+    fd_set readfds, masterfds;
     // IBM Code
     int bytes_sent;
     int bytes_received;
@@ -31,7 +32,7 @@ int main(int argc, char const *argv[]) {
 
     struct timeval timeout;
 
-    timeout.tv_sec = 2;
+    timeout.tv_sec = 1;
     timeout.tv_usec = 0;    
     
     to.sin_family = AF_INET;
@@ -41,6 +42,8 @@ int main(int argc, char const *argv[]) {
         memset(&to, 0, sizeof(to));
         to.sin_port = htons(i);
         cout << "Port no: " << i << endl;
+        
+        bind(sock, (struct sockaddr*)&to, sizeof(to));
         //IBM code
         cout << "Sending bytes to " << i << ".." << endl;
         bytes_sent = sendto(sock, data_sent, sizeof(data_sent), 0, (struct sockaddr*)&to, sizeof(to));
