@@ -20,12 +20,11 @@ int main(int argc, char const *argv[]) {
     int portNoLow = atoi(argv[2]); //from 4000
     int portNoHigh = atoi(argv[3]); //to 4100
 
-    // Slide packet 1
-    fd_set readfds, masterfds;
     // IBM Code
     int bytes_sent;
     int bytes_received;
     char data_sent[256];
+    char *hello = "Hello from client"; 
     char data_recv[256];
     struct sockaddr_in to;
     struct sockaddr from;
@@ -43,39 +42,23 @@ int main(int argc, char const *argv[]) {
         int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
         memset(&to, 0, sizeof(to));
         
-        FD_ZERO(&masterfds);
-        FD_SET(sock, &masterfds);
-        
         to.sin_port = htons(i);
         cout << "Port no: " << i << endl;
 
-        bind(sock, (struct sockaddr*)&to, sizeof(to));
-        bytes_sent = sendto(sock, data_sent, sizeof(data_sent), 0, (struct sockaddr*)&to, sizeof(to));
-        if(select(sock+1, &readfds, NULL, NULL, &timeout) < 0)
+        //bind(sock, (struct sockaddr*)&to, sizeof(to));
+        bytes_sent = sendto(sock, (const char *)hello, strlen(hello), 0, (struct sockaddr*)&to, sizeof(to));
+        cout << "Sending bytes to " << i << ".." << endl;
+        
+        socklen_t addrlen = sizeof(from);
+        if(select(sock+1, &readfds, NULL, NULL, &timeout) > 0)
         {
-            cout << "Error on select";
+            bytes_received = recvfrom(sock, data_recv, sizeof(data_recv), 0, &from, &addrlen);        
+            cout << "Data received from port " << i << ": " << data_recv << endl;
+        } else {
+            cout << "Nope!" << endl;
         }
-        cout << "Inbetween select and FD_ISSET" << endl;
 
-        if(FD_ISSET(sock, &readfds))
-        {
-            cout << "Read from socket";
-            //IBM code
-            cout << "Sending bytes to " << i << ".." << endl;
-            socklen_t addrlen = sizeof(from);
-            cout << "Size of addrlen " << addrlen << ".." << endl;
-            cout << "Now receiving bytes from " << i << ".." << endl;
-            bytes_received = recvfrom(sock, data_recv, sizeof(data_recv), 0, &from, &addrlen);
-            cout << "Bytes received from " << i << ".." << endl;
-
-            if (sizeof(data_recv) > 0) {
-            cout << "Port no: " << i << " sent back data!";
-            } else {
-            cout << "Port no: " << i << " sent no data back.....";
-            }
-        }
         close(sock);
-        cout << "Closed socket" << endl;
     }
     
     return 0;
