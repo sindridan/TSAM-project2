@@ -24,33 +24,48 @@ int main(int argc, char const *argv[]) {
     int bytes_sent;
     int bytes_received;
     char data_sent[256];
-    char *hello = "Hello from client"; 
+    string hello = "Hello from client"; 
     char data_recv[256];
     struct sockaddr_in to;
     struct sockaddr from;
 
     struct timeval timeout;
 
-    
-    
+    fd_set fdset;
+
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+    /*
+    int listenSock;
+    int clientSock;
+    fd_set openSockets;
+    fd_set readSockets;
+    fd_set exceptSockets;
+    int maxfds;
+    */
+
     to.sin_family = AF_INET;
-    inet_pton(AF_INET, ipAddress.c_str(), &to.sin_addr);
 
     for(int i = portNoLow; i <= portNoHigh; i++) {
-        timeout.tv_sec = 1;
-        timeout.tv_usec = 0;    
-        int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+
+     
         memset(&to, 0, sizeof(to));
         
         to.sin_port = htons(i);
+        inet_pton(AF_INET, ipAddress.c_str(), &to.sin_addr);
         cout << "Port no: " << i << endl;
 
         //bind(sock, (struct sockaddr*)&to, sizeof(to));
-        bytes_sent = sendto(sock, (const char *)hello, strlen(hello), 0, (struct sockaddr*)&to, sizeof(to));
-        cout << "Sending bytes to " << i << ".." << endl;
-        
+        bytes_sent = sendto(sock, hello.c_str(), sizeof(hello), 0, (struct sockaddr*)&to, sizeof(to));
+        //cout << "Sending bytes to " << i << ".." << endl;
+        FD_ZERO(&fdset);
+        FD_SET(sock, &fdset);
         socklen_t addrlen = sizeof(from);
-        if(select(sock+1, &readfds, NULL, NULL, &timeout) > 0)
+        timeout.tv_sec = 1;
+        timeout.tv_usec = 0;
+        if(select(sock+1, &fdset, NULL, NULL, &timeout) > 0)
+        // if(select(sock+1, &from, NULL, NULL, &timeout) > 0)
         {
             bytes_received = recvfrom(sock, data_recv, sizeof(data_recv), 0, &from, &addrlen);        
             cout << "Data received from port " << i << ": " << data_recv << endl;
@@ -58,8 +73,7 @@ int main(int argc, char const *argv[]) {
             cout << "Nope!" << endl;
         }
 
-        close(sock);
     }
-    
+    close(sock);
     return 0;
 }
