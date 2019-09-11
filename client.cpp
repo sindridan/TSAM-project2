@@ -55,7 +55,7 @@ int main(int argc, char const *argv[]) {
         {
             cout << "Error on select";
         }
-        cout << "Inbetween select and FD_ISSET" << endl;
+        //cout << "Inbetween select and FD_ISSET" << endl;
 
         if(FD_ISSET(sock, &readfds))
         {
@@ -68,12 +68,13 @@ int main(int argc, char const *argv[]) {
             bytes_received = recvfrom(sock, data_recv, sizeof(data_recv), 0, &from, &addrlen);
             cout << "Bytes received from " << i << ".." << endl;
 
-            if (sizeof(data_recv) > 0) {
+            if (sizeof(bytes_received) > 0) {
             cout << "Port no: " << i << " sent back data!";
             } else {
             cout << "Port no: " << i << " sent no data back.....";
             }
         }
+
         close(sock);
         cout << "Closed socket" << endl;
     }
