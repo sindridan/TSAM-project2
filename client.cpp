@@ -44,15 +44,27 @@ unsigned short chkSum(unsigned short *ptr,int nbytes)
 int main(int argc, char const *argv[]) {
 
     
+    // System inputs
     string ipAddress = argv[1]; //"130.208.243.61";
     int portNoLow = atoi(argv[2]); //from 4000
     int portNoHigh = atoi(argv[3]); //to 4100
+
+    struct pseudo_header
+    { //IPv4 pseudo header format
+        u_int32_t source_address; //both the source address and destination address are 32 bits
+        u_int32_t dest_address;
+        u_int8_t zeroes;
+        u_int8_t protocol;
+        u_int16_t udp_length;
+    };
+
+    unsigned short checksum = 61453; //hard coded solution for now
 
     // IBM Code
     int bytes_sent;
     int bytes_received;
     char data_sent[256];
-    string hello = "Hello from client"; 
+    string hello = "SHOW ME WHAT YOU GOT"; 
     char data_recv[256];
     struct sockaddr_in to;
     struct sockaddr from;
@@ -63,6 +75,7 @@ int main(int argc, char const *argv[]) {
     fd_set fdset;
 
     int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    int rawSock = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
 
     to.sin_family = AF_INET;
     //loop through the ports, from low to high
@@ -96,19 +109,19 @@ int main(int argc, char const *argv[]) {
     }
     //close the socket after use
     close(sock);
-    /*for(int i = 0; i < openPorts.size(); i++){
-        cout << openPorts[i] << endl;
-    }*/
 
-    struct pseudo_header
-    { //IPv4 pseudo header format
-        u_int32_t source_address; //both the source address and destination address are 32 bits
-        u_int32_t dest_address;
-        u_int8_t zeroes;
-        u_int8_t protocol;
-        u_int16_t udp_length;
-    };
-
+    // After finding open sockets, send UDP packet with appropriate header
+    // Loop through open ports, send packets with custom checksum and evil bit
+    
+    // Hard coded solution for the 2 open ports with hidden ports
+    // Port looking for checksum 61453
+    to.sin_port = htons(4041);
+    memset(&to, 0, sizeof(to));
+    memset(data_recv, 0, sizeof(data_recv));
+    inet_pton(AF_INET, ipAddress.c_str(), &to.sin_addr);
+    
+    close(rawmSock);
+   
 
     return 0;
 }
