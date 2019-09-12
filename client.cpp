@@ -48,10 +48,11 @@ int main(int argc, char const *argv[]) {
     //loop through the ports, from low to high
     for(int i = portNoLow; i <= portNoHigh; i++) {
         memset(&to, 0, sizeof(to));
+        memset(data_recv, 0, sizeof(data_recv));
         //assign the port to the sockaddress
         to.sin_port = htons(i);
         inet_pton(AF_INET, ipAddress.c_str(), &to.sin_addr);
-        cout << "Port no: " << i << endl;
+        //cout << "Port no: " << i << endl;
 
         //bind(sock, (struct sockaddr*)&to, sizeof(to));
         //send data
@@ -71,7 +72,6 @@ int main(int argc, char const *argv[]) {
             cout << "Data received from port " << i << ": " << data_recv << endl;
         } else {
             //timeout or error
-            cout << "Nope!" << endl;
         }
     }
     //close the socket after use
