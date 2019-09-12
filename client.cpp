@@ -7,6 +7,8 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <vector>
+#include <netinet/udp.h>
+#include <netinet/ip.h>
 
 /*
 Code referenced:
@@ -64,21 +66,24 @@ int main(int argc, char const *argv[]) {
     // IBM Code
     int bytes_sent;
     int bytes_received;
-    char data_sent[256];
-    string hello = "SHOW ME WHAT YOU GOT"; 
+    char data_sent[256]; // Used for raw socket
+    string hello = "SHOW ME WHAT YOU GOT";
+    char *udpData;
     char data_recv[256];
     struct sockaddr_in to;
     struct sockaddr from;
-
+    struct pseudo_header pHeader;
     vector<int> openPorts;
     struct timeval timeout;
-
+    
     fd_set fdset;
 
     int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     int rawSock = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
 
     to.sin_family = AF_INET;
+
+    /*************************PROBLEM 1*************************/
     //loop through the ports, from low to high
     for(int i = portNoLow; i <= portNoHigh; i++) {
         memset(&to, 0, sizeof(to));
@@ -88,7 +93,7 @@ int main(int argc, char const *argv[]) {
         inet_pton(AF_INET, ipAddress.c_str(), &to.sin_addr);
 
         //send data
-        bytes_sent = sendto(sock, hello.c_str(), sizeof(hello), 0, (struct sockaddr*)&to, sizeof(to));
+        sendto(sock, hello.c_str(), sizeof(hello), 0, (struct sockaddr*)&to, sizeof(to));
         //cout << "Sending bytes to " << i << ".." << endl;
         FD_ZERO(&fdset);
         FD_SET(sock, &fdset);
@@ -100,7 +105,7 @@ int main(int argc, char const *argv[]) {
         // if(select(sock+1, &from, NULL, NULL, &timeout) > 0)
         {
             //if recieved data, print it out and move on
-            bytes_received = recvfrom(sock, data_recv, sizeof(data_recv), 0, &from, &addrlen);        
+            recvfrom(sock, data_recv, sizeof(data_recv), 0, &from, &addrlen);        
             cout << "Data received from port " << i << ": " << data_recv << endl;
             openPorts.push_back(i);
         } else {
@@ -111,16 +116,47 @@ int main(int argc, char const *argv[]) {
     //close the socket after use
     close(sock);
 
+    /*************************PROBLEM 2*************************/
     // After finding open sockets, send UDP packet with appropriate header
     // Loop through open ports, send packets with custom checksum and evil bit
     
     // Hard coded solution for the 2 open ports with hidden ports
     // Port looking for checksum 61453
-    
+
+    // Raw socket header below
+    // Fill in IP header
+    struct iphdr *ipHeader = (struct iphdr*) data_sent;
+
+    // Fill in UDP header 
+    struct udphdr *udpHeader = (struct udphdr*) (data_sent + sizeof(struct ip));
+    udpData = data_sent + sizeof(struct iphdr) + sizeof(struct udphdr); // TODO: comment
+    strcpy(udpData, "knock");
+
+
+    //Continue here....
+
+
     to.sin_port = htons(4041);
     memset(&to, 0, sizeof(to));
     memset(data_recv, 0, sizeof(data_recv));
     inet_pton(AF_INET, ipAddress.c_str(), &to.sin_addr);
+    sendto(rawSock, hello.c_str(), sizeof(hello), 0, (struct sockaddr*)&to, sizeof(to));
+        //cout << "Sending bytes to " << i << ".." << endl;
+    FD_ZERO(&fdset);
+    FD_SET(rawSock, &fdset);
+    socklen_t addrlen = sizeof(from);
+    //assign timeout
+    timeout.tv_sec = 1; //this is excessive, but looks better than having tv_usec in the hundreds of thousands.
+    timeout.tv_usec = 0;
+    if(select(rawSock, &fdset, NULL, NULL, &timeout) > 0)
+    {
+        //if recieved data, print it out and move on
+        recvfrom(rawSock, data_recv, sizeof(data_recv), 0, &from, &addrlen);        
+        cout << "Data received from port " << "4041" << ": " << data_recv << endl;
+    } else {
+        //timeout or error
+        cout << "Port not open..." << endl;
+    }
     
     close(rawSock);
    
