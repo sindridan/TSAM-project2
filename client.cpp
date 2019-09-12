@@ -11,7 +11,8 @@
 /*
 Code referenced:
 https://www.ibm.com/support/knowledgecenter/en/SSLTBW_2.1.0/com.ibm.zos.v2r1.hala001/sendto.htm
-https://www.binarytides.com/raw-udp-sockets-c-linux/ 
+https://www.binarytides.com/raw-udp-sockets-c-linux/
+https://www.digi.com/resources/documentation/Digidocs/90002002/Tasks/t_calculate_checksum.htm?TocPath=API%20Operation%7CAPI%20frame%20format%7C_____1
 */
 
 using namespace std;
@@ -88,12 +89,13 @@ int main(int argc, char const *argv[]) {
     
     // Hard coded solution for the 2 open ports with hidden ports
     // Port looking for checksum 61453
+    
     to.sin_port = htons(4041);
     memset(&to, 0, sizeof(to));
     memset(data_recv, 0, sizeof(data_recv));
     inet_pton(AF_INET, ipAddress.c_str(), &to.sin_addr);
     
-    close(rawmSock);
+    close(rawSock);
    
 
     return 0;
