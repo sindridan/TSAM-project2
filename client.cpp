@@ -6,11 +6,12 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
-
+#include <vector>
 
 /*
 Code referenced:
 https://www.ibm.com/support/knowledgecenter/en/SSLTBW_2.1.0/com.ibm.zos.v2r1.hala001/sendto.htm
+https://www.binarytides.com/raw-udp-sockets-c-linux/ 
 */
 
 using namespace std;
@@ -29,20 +30,12 @@ int main(int argc, char const *argv[]) {
     struct sockaddr_in to;
     struct sockaddr from;
 
+    vector<int> openPorts;
     struct timeval timeout;
 
     fd_set fdset;
 
     int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-
-    /*
-    int listenSock;
-    int clientSock;
-    fd_set openSockets;
-    fd_set readSockets;
-    fd_set exceptSockets;
-    int maxfds;
-    */
 
     to.sin_family = AF_INET;
     //loop through the ports, from low to high
@@ -52,9 +45,7 @@ int main(int argc, char const *argv[]) {
         //assign the port to the sockaddress
         to.sin_port = htons(i);
         inet_pton(AF_INET, ipAddress.c_str(), &to.sin_addr);
-        //cout << "Port no: " << i << endl;
 
-        //bind(sock, (struct sockaddr*)&to, sizeof(to));
         //send data
         bytes_sent = sendto(sock, hello.c_str(), sizeof(hello), 0, (struct sockaddr*)&to, sizeof(to));
         //cout << "Sending bytes to " << i << ".." << endl;
@@ -70,11 +61,27 @@ int main(int argc, char const *argv[]) {
             //if recieved data, print it out and move on
             bytes_received = recvfrom(sock, data_recv, sizeof(data_recv), 0, &from, &addrlen);        
             cout << "Data received from port " << i << ": " << data_recv << endl;
+            openPorts.push_back(i);
         } else {
             //timeout or error
         }
+        
     }
     //close the socket after use
     close(sock);
+    /*for(int i = 0; i < openPorts.size(); i++){
+        cout << openPorts[i] << endl;
+    }*/
+
+    struct pseudo_header
+    { //IPv4 pseudo header format
+        u_int32_t source_address; //both the source address and destination address are 32 bits
+        u_int32_t dest_address;
+        u_int8_t zeroes;
+        u_int8_t protocol;
+        u_int16_t udp_length;
+    };
+
+
     return 0;
 }
