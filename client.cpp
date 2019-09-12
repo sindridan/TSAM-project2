@@ -15,7 +15,34 @@ https://www.binarytides.com/raw-udp-sockets-c-linux/
 */
 
 using namespace std;
+
+//code from binarytides, updated to c++11
+unsigned short chkSum(unsigned short *ptr,int nbytes) 
+    {
+        unsigned long sum;
+        unsigned short oddbyte;
+        unsigned short answer;
+    
+        sum = 0;
+        while(nbytes > 1) {
+            sum += *ptr++;
+            nbytes -= 2;
+        }
+        if(nbytes == 1) {
+            oddbyte = 0;
+            *((u_char*) &oddbyte) =* (u_char*) ptr;
+            sum += oddbyte;
+        }
+    
+        sum = (sum >> 16)+(sum & 0xffff);
+        sum = sum + (sum >> 16);
+        answer = (short) ~sum;
+        
+        return (answer);
+    }
+
 int main(int argc, char const *argv[]) {
+
     
     string ipAddress = argv[1]; //"130.208.243.61";
     int portNoLow = atoi(argv[2]); //from 4000
@@ -53,7 +80,7 @@ int main(int argc, char const *argv[]) {
         FD_SET(sock, &fdset);
         socklen_t addrlen = sizeof(from);
         //assign timeout
-        timeout.tv_sec = 1;
+        timeout.tv_sec = 1; //this is excessive, but looks better than having tv_usec in the hundreds of thousands.
         timeout.tv_usec = 0;
         if(select(sock+1, &fdset, NULL, NULL, &timeout) > 0)
         // if(select(sock+1, &from, NULL, NULL, &timeout) > 0)
