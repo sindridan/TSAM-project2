@@ -82,7 +82,15 @@ int main(int argc, char const *argv[]) {
     fd_set fdset;
 
     int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if(sock == -1) {
+        //socket creation failed, may be because of non-root privileges
+        perror("Failed to create raw socket");
+    }
     int rawSock = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
+    if(rawSock == -1) {
+        //socket creation failed, may be because of non-root privileges
+        perror("Failed to create raw socket");
+    }
 
     to.sin_family = AF_INET;
 
@@ -150,7 +158,7 @@ int main(int argc, char const *argv[]) {
 	inet_ntop(AF_INET, &my_addr.sin_addr, myIP, sizeof(myIP));
 	myPort = ntohs(my_addr.sin_port);
     //close the socket after use
-    close(sock);
+    
 
     /*************************PROBLEM 2*************************/
     // After finding open sockets, send UDP packet with appropriate header
@@ -168,13 +176,7 @@ int main(int argc, char const *argv[]) {
 
     struct pseudo_header psh;
     udpData = data_sent + sizeof(struct iphdr) + sizeof(struct udphdr); // TODO: comment
-    strcpy(udpData, "knock");
-
-    //some address resolution
-    
-
-    //to.sin_port = htons();
-    //to.sin_addr.s_addr = inet_addr ("192.168.1.1");
+    strcpy(udpData, "");
      
     //Fill in the IP Header
     ipHeader->ihl = 5;
@@ -193,8 +195,8 @@ int main(int argc, char const *argv[]) {
     ipHeader->check = chkSum ((unsigned short *) udpData, ipHeader->tot_len);
      
     //UDP header
-    udpHeader->source = htons (6666);
-    udpHeader->dest = htons (8622);
+    udpHeader->source = htons (myPort);
+    udpHeader->dest = htons (portsFound[0]);
     udpHeader->len = htons(8 + strlen(udpData)); //tcp header size
     udpHeader->check = 0; //leave checksum 0 now, filled later by pseudo header
      
@@ -214,13 +216,13 @@ int main(int argc, char const *argv[]) {
     udpHeader->check = chkSum( (unsigned short*) pseudogram , psize);
 
 
-    memset(&to, 0, sizeof(to));
+    // memset(&to, 0, sizeof(to));
     memset(data_recv, 0, sizeof(data_recv));
-    inet_pton(AF_INET, ipAddress.c_str(), &to.sin_addr);
-    sendto(rawSock, hello.c_str(), sizeof(hello), 0, (struct sockaddr*)&to, sizeof(to));
-        //cout << "Sending bytes to " << i << ".." << endl;
-    FD_ZERO(&fdset);
-    FD_SET(rawSock, &fdset);
+    // inet_pton(AF_INET, ipAddress.c_str(), &to.sin_addr);
+    sendto(rawSock, data_sent, ipHeader->tot_len, 0, (struct sockaddr*)&to, sizeof(to));
+    
+    cout << "Sending bytes to " << portsFound[0] << ".." << endl;
+
     socklen_t addrlen = sizeof(from);
     //assign timeout
     timeout.tv_sec = 1; //this is excessive, but looks better than having tv_usec in the hundreds of thousands.
@@ -236,7 +238,7 @@ int main(int argc, char const *argv[]) {
     }
     
     close(rawSock);
-   
+    close(sock);
 
     return 0;
 }
